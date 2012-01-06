@@ -154,8 +154,7 @@ Cell *bio_func(int f, Cell *x, Node **a)
 			q += buf[i] - 33;
 		}	
 		q = q/l;
-		sprintf(buf, "%f", q);
-		setsval(y, buf);
+		setfval(y, (Awkfloat) q);
 	}
 	// else: never happens
 	return y;
