@@ -146,6 +146,7 @@ Cell *bio_func(int f, Cell *x, Node **a)
 		if (l&1) buf[l>>1] = comp_tab[(int)buf[l>>1]];
 		setsval(y, buf);
 	} else if (f == BIO_FAVGQUAL) {
+		// returns the average quality from a FASTQ quality string
 		char *buf = getsval(x);
 		int i, l;
 		double q=0;
@@ -153,8 +154,28 @@ Cell *bio_func(int f, Cell *x, Node **a)
 		for (i = 0; i < l; i++){
 			q += buf[i] - 33;
 		}	
-		q = q/l;
-		setfval(y, (Awkfloat) q);
+		setfval(y, (Awkfloat) q/l);
+	} else if (f == BIO_FQUALCOUNT) {
+		// returns the percent of bases (between 0 to 1) that have qualities larger than the minimum quality (second parameter)
+		char *buf = getsval(x);
+		int i, l=strlen(buf);
+		double q=0, c=0, m;
+		
+		if (a[1]->nnext == 0) {
+			WARNING("qualfilter requires two arguments; returning -1.0");
+			setfval(y, -1.0);
+		} else {
+			// this is the minimum quality score
+			m = getfval(execute(a[1]->nnext));
+			for (i = 0; i < l; i++){
+				q = buf[i] - 33;
+				if (q >= m){
+					c++;	   
+				}
+			}
+			setfval(y, (float)(c/l));
+		}
+		
 	}
 	// else: never happens
 	return y;

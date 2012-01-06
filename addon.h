@@ -39,6 +39,7 @@ int bio_getrec(char **pbuf, int *psize, int isrecord);
 #define BIO_FREVCOMP  202
 
 #define BIO_FAVGQUAL  301
+#define BIO_FQUALCOUNT   302
 
 struct Cell;
 struct Node;
