@@ -38,6 +38,8 @@ int bio_getrec(char **pbuf, int *psize, int isrecord);
 #define BIO_FREVERSE  201
 #define BIO_FREVCOMP  202
 
+#define BIO_FAVGQUAL  301
+
 struct Cell;
 struct Node;
 

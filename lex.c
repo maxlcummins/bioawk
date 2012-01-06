@@ -49,6 +49,7 @@ Keyword keywords[] ={	/* keep sorted: binary searched */
 	{ "NF",		VARNF,		VARNF },
 	{ "and",	BIO_FAND,	BLTIN },
 	{ "atan2",	FATAN,		BLTIN },
+	{ "avgqual", BIO_FAVGQUAL, BLTIN },
 	{ "break",	BREAK,		BREAK },
 	{ "close",	CLOSE,		CLOSE },
 	{ "continue",	CONTINUE,	CONTINUE },
