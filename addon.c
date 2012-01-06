@@ -156,13 +156,13 @@ Cell *bio_func(int f, Cell *x, Node **a)
 		}	
 		setfval(y, (Awkfloat) q/l);
 	} else if (f == BIO_FQUALCOUNT) {
-		// returns the percent of bases (between 0 to 1) that have qualities larger than the minimum quality (second parameter)
+		// returns the number of bases that have qualities larger than the minimum quality (second parameter)
 		char *buf = getsval(x);
 		int i, l=strlen(buf);
 		double q=0, c=0, m;
 		
 		if (a[1]->nnext == 0) {
-			WARNING("qualfilter requires two arguments; returning -1.0");
+			WARNING("qualcount requires two arguments; returning -1.0");
 			setfval(y, -1.0);
 		} else {
 			// this is the minimum quality score
@@ -173,7 +173,7 @@ Cell *bio_func(int f, Cell *x, Node **a)
 					c++;	   
 				}
 			}
-			setfval(y, (float)(c/l));
+			setfval(y, (float)(c));
 		}
 		
 	}
