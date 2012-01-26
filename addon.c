@@ -1,6 +1,8 @@
+#include <math.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "awk.h"
 
 int bio_flag = 0, bio_fmt = BIO_NULL;
@@ -9,7 +11,7 @@ static const char *col_defs[][15] = { /* FIXME: this is convenient, but not memo
 	{"header", NULL},
 	{"bed", "chrom", "start", "end", "name", "score", "strand", "thickstart", "thickend", "rgb", "blockcount", "blocksizes", "blockstarts", NULL},
 	{"sam", "qname", "flag", "rname", "pos", "mapq", "cigar", "rnext", "pnext", "tlen", "seq", "qual", NULL},
-	{"vcf", "chrom", "pos", "id", "ref", "alt", "qual", "filter" "info", NULL},
+	{"vcf", "chrom", "pos", "id", "ref", "alt", "qual", "filter", "info", NULL},
 	{"gff", "seqname", "source", "feature", "start", "end", "score", "filter", "strand", "group", "attribute", NULL},
 	{"fastx", "name", "seq", "qual", NULL},
 	{NULL}
@@ -24,12 +26,24 @@ static const char *tab_delim = "nyyyyyn", *hdr_chr = "\0#@##\0\0";
 static void set_colnm_aux(const char *p, int col)
 {
 	const char *q;
+	char *r = 0;
 	Cell *x;
-	for (q = p; *q; ++q)
-		if (!isdigit(*q)) break;
-	if (*q == 0) return; /* do not set if string p is an integer */
-	if ((x = lookup(p, symtab)) != NULL)
-		x->tval = NUM, x->fval = col;
+	for (q = p; *q; ++q) /* test if there are punctuations */
+		if (ispunct(*q) && *q != '_') break;
+	if (*q || isdigit(*p)) { /* there are punctuations or the first is digit */
+		char *qq;
+		r = malloc(strlen(p) + 2);
+		if (isdigit(*p)) {
+			*r = '_';
+			strcpy(r + 1, p);
+		} else strcpy(r, p);
+		for (qq = r; *qq; ++qq)
+			if (ispunct(*qq)) *qq = '_';
+		q = r;
+	} else q = p;
+	if ((x = lookup(q, symtab)) != NULL) /* do not add if not appear in the program */
+		setfval(x, (Awkfloat)col);
+	if (r) free(r);
 }
 
 int bio_get_fmt(const char *s)
@@ -87,17 +101,19 @@ void bio_set_colnm()
  **********************/
 
 static char comp_tab[] = {
-	  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
-	 16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
-	 32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
-	 48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
+	  0,   1,	2,	 3,	  4,   5,	6,	 7,	  8,   9,  10,	11,	 12,  13,  14,	15,
+	 16,  17,  18,	19,	 20,  21,  22,	23,	 24,  25,  26,	27,	 28,  29,  30,	31,
+	 32,  33,  34,	35,	 36,  37,  38,	39,	 40,  41,  42,	43,	 44,  45,  46,	47,
+	 48,  49,  50,	51,	 52,  53,  54,	55,	 56,  57,  58,	59,	 60,  61,  62,	63,
 	 64, 'T', 'V', 'G', 'H', 'E', 'F', 'C', 'D', 'I', 'J', 'M', 'L', 'K', 'N', 'O',
-	'P', 'Q', 'Y', 'S', 'A', 'A', 'B', 'W', 'X', 'R', 'Z',  91,  92,  93,  94,  95,
+	'P', 'Q', 'Y', 'S', 'A', 'A', 'B', 'W', 'X', 'R', 'Z',	91,	 92,  93,  94,	95,
 	 64, 't', 'v', 'g', 'h', 'e', 'f', 'c', 'd', 'i', 'j', 'm', 'l', 'k', 'n', 'o',
 	'p', 'q', 'y', 's', 'a', 'a', 'b', 'w', 'x', 'r', 'z', 123, 124, 125, 126, 127
 };
 
-#define tempfree(x)   if (istemp(x)) tfree(x); else
+static float q_int2real[128];
+
+#define tempfree(x)	  if (istemp(x)) tfree(x); else
 
 Cell *bio_func(int f, Cell *x, Node **a)
 {
@@ -109,7 +125,7 @@ Cell *bio_func(int f, Cell *x, Node **a)
 			setfval(y, 0.0);
 		} else {
 			z = execute(a[1]->nnext);
-			setfval(y, (Awkfloat)((long)getfval(x) & (long)getfval(z))); // FIXME: does (long) always work???
+			setfval(y, (Awkfloat)((long)getfval(x) & (long)getfval(z))); /* FIXME: does (long) always work??? */
 			tempfree(z);
 		}
 	} else if (f == BIO_FOR) {
@@ -138,46 +154,83 @@ Cell *bio_func(int f, Cell *x, Node **a)
 			tmp = buf[i], buf[i] = buf[l-1-i], buf[l-1-i] = tmp;
 		setsval(y, buf);
 	} else if (f == BIO_FREVCOMP) {
-		char *buf = getsval(x);
+		char *buf;
 		int i, l, tmp;
+		buf = getsval(x);
 		l = strlen(buf);
 		for (i = 0; i < l>>1; ++i)
 			tmp = comp_tab[(int)buf[i]], buf[i] = comp_tab[(int)buf[l-1-i]], buf[l-1-i] = tmp;
 		if (l&1) buf[l>>1] = comp_tab[(int)buf[l>>1]];
 		setsval(y, buf);
-	} else if (f == BIO_FAVGQUAL) {
-		// returns the average quality from a FASTQ quality string
-		char *buf = getsval(x);
-		int i, l;
-		double q=0;
+	} else if (f == BIO_FGC) {
+		char *buf;
+		int i, l, gc = 0;
+		buf = getsval(x);
 		l = strlen(buf);
-		for (i = 0; i < l; i++){
-			q += buf[i] - 33;
-		}	
-		setfval(y, (Awkfloat) q/l);
-	} else if (f == BIO_FQUALCOUNT) {
-		// returns the number of bases that have qualities larger than the minimum quality (second parameter)
-		char *buf = getsval(x);
-		int i, l=strlen(buf);
-		double q=0, c=0, m;
-		
-		if (a[1]->nnext == 0) {
-			WARNING("qualcount requires two arguments; returning -1.0");
-			setfval(y, -1.0);
-		} else {
-			// this is the minimum quality score
-			m = getfval(execute(a[1]->nnext));
-			for (i = 0; i < l; i++){
-				q = buf[i] - 33;
-				if (q >= m){
-					c++;	   
+		if (l) { /* don't try for empty strings */
+			for (i = 0; i < l; ++i)
+				if (buf[i] == 'g' || buf[i] == 'c' ||
+					buf[i] == 'G' || buf[i] == 'C')
+					gc++;
+			setfval(y, (Awkfloat)gc / l);
+		}
+	} else if (f == BIO_FMEANQUAL) {
+		char *buf;
+		int i, l, total_qual = 0;
+		buf = getsval(x);
+		l = strlen(buf);
+		if (l) { /* don't try for empty strings */
+			for (i = 0; i < l; ++i)
+				total_qual += buf[i] - 33;
+			setfval(y, (Awkfloat)total_qual / l);
+		}
+	} else if (f == BIO_FTRIMQ) {
+		char *buf;
+		double thres = 0.05, s, max;
+		int i, l, tmp, beg, end;
+		Cell *u = 0, *v = 0;
+		if (a[1]->nnext) {
+			u = execute(a[1]->nnext); /* begin */
+			if (a[1]->nnext->nnext) {
+				v = execute(a[1]->nnext->nnext); /* end */
+				if (a[1]->nnext->nnext->nnext) {
+					z = execute(a[1]->nnext->nnext->nnext);
+					thres = getfval(z); /* user defined threshold */
+					tempfree(z);
 				}
 			}
-			setfval(y, (float)(c));
 		}
-		
-	}
-	// else: never happens
+		buf = getsval(x);
+		l = strlen(buf);
+		if (q_int2real[0] == 0.) /* to initialize */
+			for (i = 0; i < 128; ++i)
+				q_int2real[i] = pow(10., -(i - 33) / 10.);
+		for (i = 0, beg = tmp = 0, end = l, s = max = 0.; i < l; ++i) {
+			int q = buf[i];
+			if (q < 36) q = 36;
+			if (q > 127) q = 127;
+			s += thres - q_int2real[q];
+			if (s > max) max = s, beg = tmp, end = i + 1;
+			if (s < 0) s = 0, tmp = i + 1;
+		}
+		if (u) { setfval(u, beg); tempfree(u); } /* 1-based position; as substr() is 1-based. */
+		if (v) { setfval(v, end); tempfree(v); }
+	} else if (f == BIO_FQUALCOUNT) {
+		if (a[1]->nnext == 0) {
+			WARNING("xor requires two arguments; returning 0.0");
+			setfval(y, 0.0);
+		} else {
+			char *buf;
+			int i, l, thres, cnt = 0;
+			buf = getsval(x);
+			l = strlen(buf);
+			z = execute(a[1]->nnext); /* threshold */
+			thres = (int)(getfval(z) + .499);
+			for (i = 0; i < l; ++i)
+				if (buf[i] - 33 >= thres) ++cnt;
+			setfval(y, (Awkfloat)cnt);
+		}
+	} /* else: never happens */
 	return y;
 }
 
@@ -207,7 +260,7 @@ int bio_getrec(char **pbuf, int *psize, int isrecord)
 		g_firsttime = 0;
 		for (i = 1; i < *ARGC; i++) {
 			p = getargv(i); /* find 1st real filename */
-			if (p == NULL || *p == '\0') {  /* deleted or zapped */
+			if (p == NULL || *p == '\0') {	/* deleted or zapped */
 				argno++;
 				continue;
 			}
@@ -218,7 +271,7 @@ int bio_getrec(char **pbuf, int *psize, int isrecord)
 			setclvar(p);	/* a commandline assignment before filename */
 			argno++;
 		}
-		g_fp = gzdopen(fileno(stdin), "r");	/* no filenames, so use stdin */
+		g_fp = gzdopen(fileno(stdin), "r"); /* no filenames, so use stdin */
 		g_kseq = kseq_init(g_fp);
 		g_is_stdin = 1;
 	}

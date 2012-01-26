@@ -49,7 +49,6 @@ Keyword keywords[] ={	/* keep sorted: binary searched */
 	{ "NF",		VARNF,		VARNF },
 	{ "and",	BIO_FAND,	BLTIN },
 	{ "atan2",	FATAN,		BLTIN },
-	{ "avgqual", BIO_FAVGQUAL, BLTIN },
 	{ "break",	BREAK,		BREAK },
 	{ "close",	CLOSE,		CLOSE },
 	{ "continue",	CONTINUE,	CONTINUE },
@@ -63,6 +62,7 @@ Keyword keywords[] ={	/* keep sorted: binary searched */
 	{ "for",	FOR,		FOR },
 	{ "func",	FUNC,		FUNC },
 	{ "function",	FUNC,		FUNC },
+	{ "gc",	BIO_FGC,		BLTIN },
 	{ "getline",	GETLINE,	GETLINE },
 	{ "gsub",	GSUB,		GSUB },
 	{ "if",		IF,		IF },
@@ -72,12 +72,13 @@ Keyword keywords[] ={	/* keep sorted: binary searched */
 	{ "length",	FLENGTH,	BLTIN },
 	{ "log",	FLOG,		BLTIN },
 	{ "match",	MATCHFCN,	MATCHFCN },
+	{ "meanqual",	BIO_FMEANQUAL,		BLTIN },
 	{ "next",	NEXT,		NEXT },
 	{ "nextfile",	NEXTFILE,	NEXTFILE },
 	{ "or",		BIO_FOR,	BLTIN },
 	{ "print",	PRINT,		PRINT },
 	{ "printf",	PRINTF,		PRINTF },
-	{ "qualcount", BIO_FQUALCOUNT, BLTIN},
+	{ "qualcount",	BIO_FQUALCOUNT,	BLTIN },
 	{ "rand",	FRAND,		BLTIN },
 	{ "return",	RETURN,		RETURN },
 	{ "revcomp",BIO_FREVCOMP, BLTIN },
@@ -92,8 +93,9 @@ Keyword keywords[] ={	/* keep sorted: binary searched */
 	{ "system",	FSYSTEM,	BLTIN },
 	{ "tolower",	FTOLOWER,	BLTIN },
 	{ "toupper",	FTOUPPER,	BLTIN },
+	{ "trimq",	BIO_FTRIMQ,	BLTIN },
 	{ "while",	WHILE,		WHILE },
-	{ "xor",	BIO_FXOR,	BLTIN },
+	{ "xor",	BIO_FXOR,	BLTIN }
 };
 
 #define	RET(x)	{ if(dbg)printf("lex %s\n", tokname(x)); return(x); }
