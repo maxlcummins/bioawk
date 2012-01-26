@@ -20,7 +20,7 @@ For known interval formats the columns can be accessed via
 the variables called *$start*, *$end*, *$chrom* (etc). For example
 to print the feature lenght of a file in BED format one could write::
 
-    awk -c bed ' { print $end - $start } ' test.bed
+    awk -c bed '{ print $end - $start }' test.bed
     
 One important change (and innovation) over the original awk is that bioawk
 will treat sequences that may span multiple lines as a single record.
