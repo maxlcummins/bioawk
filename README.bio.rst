@@ -14,7 +14,7 @@ example for the supported sequence formats the *$name*, *$seq* and, if applicabl
 sequence record in each iteration. Here is an example of iterating over a fastq
 file to print the sequences::
 
-    awk -c fastq '{ print $seq }' test.fq
+    awk -c fastx '{ print $seq }' test.fq
 
 For known interval formats the columns can be accessed via
 the variables called *$start*, *$end*, *$chrom* (etc). For example
